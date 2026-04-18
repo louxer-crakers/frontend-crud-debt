@@ -24,10 +24,10 @@
         <header>
             <div class="logo">Debt Tracker</div>
             <div class="config-bubble glass">
-                <i data-lucide="link"></i>
-                <input type="text" id="api-url" placeholder="API Gateway URL...">
-                <button class="btn-icon" id="save-config" title="Save to LocalStorage">
-                    <i data-lucide="save"></i>
+                <i data-lucide="link" style="width: 16px; margin-right: 8px;"></i>
+                <input type="text" id="api-url" placeholder="Paste API URL Here..." class="config-input">
+                <button class="btn-icon-soft" id="save-config" title="Save API URL">
+                    <i data-lucide="save" style="width: 14px;"></i>
                 </button>
             </div>
         </header>
@@ -149,6 +149,21 @@
                     <button type="submit" class="btn btn-primary">Update Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content glass confirm-content">
+            <div class="modal-header">
+                <h3>Action Required</h3>
+                <i data-lucide="help-circle" style="color: var(--secondary)"></i>
+            </div>
+            <p id="confirm-message" style="margin-bottom: 2rem;">Are you sure you want to proceed?</p>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-soft" id="confirm-cancel">Cancel</button>
+                <button class="btn btn-primary" id="confirm-ok" style="padding: 1.2rem 2rem;">Confirm</button>
+            </div>
         </div>
     </div>
 

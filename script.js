@@ -1,5 +1,5 @@
 /**
- * Project Debt Tracker - Client Side Logic (Phase 3)
+ * Project Debt Tracker - Client Side Logic (Phase 5 - Refined Noir)
  * Integration with AWS API Gateway & DynamoDB
  */
 
@@ -17,11 +17,13 @@ const FILTER_BTNS = document.querySelectorAll('.filter-btn');
 // Modal Elements
 const EDIT_MODAL = document.getElementById('edit-modal');
 const EDIT_FORM = document.getElementById('edit-form');
+const CONFIRM_MODAL = document.getElementById('confirm-modal');
 
 // State
 let debts = [];
 let currentFilter = 'all';
 let refreshInterval = null;
+let confirmCallback = null;
 
 // Initialize Config
 const savedUrl = localStorage.getItem(API_CONFIG_KEY);
@@ -102,8 +104,6 @@ EDIT_FORM.addEventListener('submit', async (e) => {
     }
 });
 
-REFRESH_BTN.addEventListener('click', fetchData);
-
 SEARCH_BTN.addEventListener('click', async () => {
     const name = SEARCH_INPUT.value.trim();
     const url = getApiUrl();
@@ -142,6 +142,13 @@ FILTER_BTNS.forEach(btn => {
         fetchData();
     });
 });
+
+// Confirmation Modal Listeners
+document.getElementById('confirm-ok').addEventListener('click', () => {
+    if (confirmCallback) confirmCallback();
+    closeConfirmModal();
+});
+document.getElementById('confirm-cancel').addEventListener('click', closeConfirmModal);
 
 // Functions
 async function fetchData() {
@@ -197,7 +204,7 @@ function renderDebts() {
                         <i data-lucide="edit-3" style="width: 14px;"></i>
                     </button>
                     ${item.status !== 'Paid' ? `
-                        <button class="btn-icon btn-settle" onclick="confirmSettle('${item.id}')" title="Settle">
+                        <button class="btn-icon btn-settle" onclick="requestSettle('${item.id}')" title="Settle">
                             <i data-lucide="check" style="width: 14px;"></i>
                         </button>
                     ` : `
@@ -208,7 +215,6 @@ function renderDebts() {
         </tr>
     `).join('');
     
-    // Stagger reveal
     setTimeout(() => {
         document.querySelectorAll('.debt-row').forEach(row => row.classList.add('visible'));
     }, 100);
@@ -230,6 +236,7 @@ async function openEditModal(id) {
             document.getElementById('edit-status').value = item.status || 'Active';
             
             EDIT_MODAL.style.display = 'flex';
+            lucide.createIcons();
         }
     } catch (e) {
         showToast('Failed to fetch details', 'error');
@@ -240,10 +247,10 @@ function closeEditModal() {
     EDIT_MODAL.style.display = 'none';
 }
 
-function confirmSettle(id) {
-    if (confirm('Are you sure you want to mark this as Paid?')) {
+function requestSettle(id) {
+    showConfirmModal('Are you sure you want to mark this debt as Paid?', () => {
         markPaid(id);
-    }
+    });
 }
 
 async function markPaid(id) {
@@ -261,8 +268,24 @@ async function markPaid(id) {
 
 function updateStats(stats) {
     if (stats.error) return;
-    document.querySelector('#card-total .value').innerText = `Rp ${formatNumber(stats.total_active)}`;
-    document.querySelector('#card-lunas .value').innerText = `Rp ${formatNumber(stats.total_paid)}`;
+    // Map to the correct fields from backend (Phase 2 names)
+    const activeVal = stats.total_active || stats.total_aktif || 0;
+    const paidVal = stats.total_paid || stats.total_lunas || 0;
+    
+    document.querySelector('#card-total .value').innerText = `Rp ${formatNumber(activeVal)}`;
+    document.querySelector('#card-lunas .value').innerText = `Rp ${formatNumber(paidVal)}`;
+}
+
+function showConfirmModal(message, onConfirm) {
+    document.getElementById('confirm-message').innerText = message;
+    confirmCallback = onConfirm;
+    CONFIRM_MODAL.style.display = 'flex';
+    lucide.createIcons();
+}
+
+function closeConfirmModal() {
+    CONFIRM_MODAL.style.display = 'none';
+    confirmCallback = null;
 }
 
 function showToast(message, type = 'success') {
@@ -306,12 +329,13 @@ function stopAutoRefresh() {
 }
 
 function initDashboard() {
-    // Hide splash
     window.addEventListener('load', () => {
         setTimeout(() => {
             const splash = document.getElementById('splash');
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 800);
+            if (splash) {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 800);
+            }
         }, 1500);
     });
 
@@ -324,6 +348,6 @@ function initDashboard() {
 // Global hooks
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
-window.confirmSettle = confirmSettle;
+window.requestSettle = requestSettle;
 
 initDashboard();

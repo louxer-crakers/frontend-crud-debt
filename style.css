@@ -16,11 +16,8 @@
     --danger: #ef4444;
     --success: #10b981;
     --border: rgba(255, 255, 255, 0.08);
-    --glass: rgba(18, 18, 30, 0.6);
-    --radius-lg: 24px;
-    --radius-md: 16px;
-    --cubic-out: cubic-bezier(0.22, 1, 0.36, 1);
-    --cubic-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --bg-dark: #07070a;
 }
 
 * {
@@ -133,6 +130,28 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 4rem;
+}
+
+.config-bubble {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.config-input {
+    background: transparent !important;
+    border: none !important;
+    color: white;
+    font-size: 0.9rem;
+    width: 200px;
+    padding: 0.5rem !important;
+}
+
+.config-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .logo {
@@ -350,8 +369,50 @@ header {
 
 /* Modals & Toasts */
 .modal-overlay {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(40px) saturate(180%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s var(--cubic-out);
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 450px;
+    padding: 2.5rem;
+    position: relative;
+    border: 1px solid var(--border);
+    animation: modalPop 0.4s var(--cubic-out);
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.confirm-content {
+    text-align: center;
+    max-width: 400px;
+}
+
+.btn-soft {
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    border-radius: 12px;
+    padding: 1.2rem 2rem;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+
+.btn-soft:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .toast {
