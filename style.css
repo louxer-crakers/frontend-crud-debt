@@ -16,8 +16,13 @@
     --danger: #ef4444;
     --success: #10b981;
     --border: rgba(255, 255, 255, 0.08);
+    --glass: rgba(18, 18, 30, 0.6);
     --glass-border: rgba(255, 255, 255, 0.1);
     --bg-dark: #07070a;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --cubic-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --cubic-in-out: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 * {
@@ -121,8 +126,8 @@ body::after {
     background: var(--glass);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border-radius: 32px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
 }
 
 header {
@@ -179,11 +184,16 @@ header {
     padding: 2.5rem 2rem;
     position: relative;
     overflow: hidden;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     transition: transform 0.4s var(--cubic-out);
 }
 
 .stat-card:hover {
     transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .stat-card .label {
@@ -227,8 +237,8 @@ header {
 }
 
 .filter-btn {
-    padding: 0.7rem 1.5rem;
-    border-radius: 12px;
+    padding: 0.7rem 1.8rem;
+    border-radius: 100px;
     border: 1px solid transparent;
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-mid);
@@ -338,15 +348,22 @@ header {
     margin-bottom: 0.6rem;
 }
 
-.input-group input, .input-group textarea, select.glass {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+.input-group input, .input-group textarea, select.glass, .search-input {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
     padding: 1.1rem;
-    color: var(--text-high);
-    width: 100%;
+    color: white !important;
     font-family: inherit;
-    transition: border-color 0.3s var(--cubic-out);
+    transition: all 0.3s var(--cubic-out);
+}
+
+.search-input {
+    color: white !important;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 .input-group input:focus {
@@ -358,9 +375,11 @@ header {
     background: var(--text-high);
     color: var(--bg-base);
     font-weight: 800;
-    border-radius: 12px;
-    padding: 1.2rem;
-    transition: transform 0.2s;
+    border-radius: 16px;
+    padding: 1.2rem 2.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s var(--cubic-out);
 }
 
 .btn-primary:active {
@@ -403,16 +422,19 @@ header {
 }
 
 .btn-soft {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
     color: white;
-    border-radius: 12px;
-    padding: 1.2rem 2rem;
+    border-radius: 16px;
+    padding: 1.2rem 2.5rem;
     font-weight: 700;
-    transition: background 0.2s;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .btn-soft:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 .toast {
