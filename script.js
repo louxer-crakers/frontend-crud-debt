@@ -1,6 +1,5 @@
 /**
- * Project Debt Tracker - Client Side Logic (Phase 5 - Refined Noir)
- * Integration with AWS API Gateway & DynamoDB
+ * Project Debt Tracker - Client Side Logic (Phase 6 - Noir Stability)
  */
 
 const API_CONFIG_KEY = 'project_hutang_api_url';
@@ -18,6 +17,7 @@ const FILTER_BTNS = document.querySelectorAll('.filter-btn');
 const EDIT_MODAL = document.getElementById('edit-modal');
 const EDIT_FORM = document.getElementById('edit-form');
 const CONFIRM_MODAL = document.getElementById('confirm-modal');
+const API_STATUS_DOT = document.getElementById('api-status-dot');
 
 // State
 let debts = [];
@@ -92,7 +92,7 @@ EDIT_FORM.addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
-            showToast('Updated Successfully', 'success');
+            showToast('Record Updated Successfully', 'success');
             closeEditModal();
             fetchData();
         } else {
@@ -118,7 +118,7 @@ SEARCH_BTN.addEventListener('click', async () => {
             renderDebts();
             CLEAR_SEARCH_BTN.style.display = 'flex';
             stopAutoRefresh();
-            showToast(`Found ${debts.length} records for ${name}`, 'success');
+            showToast(`Found ${debts.length} records`, 'success');
         } else {
             showToast(data.error || 'Search Error', 'error');
         }
@@ -153,11 +153,23 @@ document.getElementById('confirm-cancel').addEventListener('click', closeConfirm
 // Functions
 async function fetchData() {
     const url = getApiUrl();
-    if (!url) return;
+    if (!url) {
+        setApiStatus('offline');
+        return;
+    }
 
     REFRESH_BTN.classList.add('animate-spin');
 
     try {
+        const statsRes = await fetch(`${url}/debt/stats`);
+        if (statsRes.ok) {
+            setApiStatus('online');
+            const stats = await statsRes.json();
+            updateStats(stats);
+        } else {
+            setApiStatus('offline');
+        }
+
         let debtEndpoint = `${url}/debt`;
         if (currentFilter !== 'all') {
             debtEndpoint = `${url}/debt/status/${currentFilter}`;
@@ -167,12 +179,9 @@ async function fetchData() {
         debts = await debtRes.json();
         renderDebts();
 
-        const statsRes = await fetch(`${url}/debt/stats`);
-        const stats = await statsRes.json();
-        updateStats(stats);
-
     } catch (error) {
         console.error('Core sync failed', error);
+        setApiStatus('offline');
     } finally {
         setTimeout(() => REFRESH_BTN.classList.remove('animate-spin'), 500);
     }
@@ -203,13 +212,9 @@ function renderDebts() {
                     <button class="btn-icon btn-edit" onclick="openEditModal('${item.id}')" title="Edit">
                         <i data-lucide="edit-3" style="width: 14px;"></i>
                     </button>
-                    ${item.status !== 'Paid' ? `
-                        <button class="btn-icon btn-settle" onclick="requestSettle('${item.id}')" title="Settle">
-                            <i data-lucide="check" style="width: 14px;"></i>
-                        </button>
-                    ` : `
-                        <i data-lucide="shield-check" style="width: 24px; color: var(--secondary); opacity: 0.4; margin-left: 10px;"></i>
-                    `}
+                    <button class="btn-icon btn-delete" onclick="requestDelete('${item.id}')" title="Delete Permanently">
+                        <i data-lucide="trash-2" style="width: 14px; color: var(--danger)"></i>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -247,28 +252,28 @@ function closeEditModal() {
     EDIT_MODAL.style.display = 'none';
 }
 
-function requestSettle(id) {
-    showConfirmModal('Are you sure you want to mark this debt as Paid?', () => {
-        markPaid(id);
+function requestDelete(id) {
+    showConfirmModal('⚠️ PERMANEN DELETE: Are you sure? This cannot be undone!', () => {
+        performHardDelete(id);
     });
 }
 
-async function markPaid(id) {
+async function performHardDelete(id) {
     const url = getApiUrl();
     try {
         const response = await fetch(`${url}/debt/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            showToast('Record Settled!', 'success');
+            showToast('Record Deleted Permanently', 'success');
             fetchData();
+        } else {
+            showToast('Delete Failed', 'error');
         }
     } catch (e) {
-        showToast('Settlement Failed', 'error');
+        showToast('Network error on delete', 'error');
     }
 }
 
 function updateStats(stats) {
-    if (stats.error) return;
-    // Map to the correct fields from backend (Phase 2 names)
     const activeVal = stats.total_active || stats.total_aktif || 0;
     const paidVal = stats.total_paid || stats.total_lunas || 0;
     
@@ -292,13 +297,10 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
     let icon = type === 'success' ? 'check-circle' : 'alert-circle';
     toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
-    
     container.appendChild(toast);
     lucide.createIcons();
-
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(100%)';
@@ -306,17 +308,16 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+function setApiStatus(status) {
+    API_STATUS_DOT.className = `status-dot ${status}`;
+}
+
 function formatNumber(num) {
     return new Intl.NumberFormat('id-ID').format(num || 0);
 }
 
 function getApiUrl() {
-    const url = API_URL_INPUT.value.trim().replace(/\/$/, "");
-    if (!url) {
-        showToast('Please set API URL', 'error');
-        return null;
-    }
-    return url;
+    return API_URL_INPUT.value.trim().replace(/\/$/, "");
 }
 
 function startAutoRefresh() {
@@ -348,6 +349,6 @@ function initDashboard() {
 // Global hooks
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
-window.requestSettle = requestSettle;
+window.requestDelete = requestDelete;
 
 initDashboard();

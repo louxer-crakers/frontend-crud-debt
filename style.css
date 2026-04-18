@@ -140,9 +140,37 @@ header {
 .config-bubble {
     display: flex;
     align-items: center;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 1rem;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 12px;
+    background: #444;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    transition: all 0.5s ease;
+}
+
+.status-dot.online {
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+    animation: pulseStatus 2s infinite;
+}
+
+.status-dot.offline {
+    background: var(--danger);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes pulseStatus {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .config-input {
@@ -341,11 +369,18 @@ header {
     padding: 2.5rem;
 }
 
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
 .input-group label {
     font-weight: 700;
     font-size: 0.8rem;
     color: var(--text-low);
-    margin-bottom: 0.6rem;
+    text-align: left;
 }
 
 .input-group input, .input-group textarea, select.glass, .search-input {
@@ -427,7 +462,7 @@ header {
     border-radius: 16px;
     padding: 1.2rem 2.5rem;
     font-weight: 700;
-    border: none;
+    border: 1px solid var(--border);
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -435,6 +470,7 @@ header {
 .btn-soft:hover {
     background: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .toast {
