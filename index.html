@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debt Tracker | Premium Personal Ledger</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">Debt Tracker</div>
+            <div class="config-bubble glass">
+                <i data-lucide="link"></i>
+                <input type="text" id="api-url" placeholder="API Gateway URL...">
+                <button class="btn-icon" id="save-config" title="Save to LocalStorage">
+                    <i data-lucide="save"></i>
+                </button>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <div class="stat-card glass" id="card-total">
+                <span class="label">Total Active Debt</span>
+                <span class="value">Rp 0</span>
+                <i data-lucide="trending-up" class="stat-icon"></i>
+            </div>
+            <div class="stat-card glass" id="card-lunas">
+                <span class="label">Total Paid (Settled)</span>
+                <span class="value">Rp 0</span>
+                <i data-lucide="check-circle" class="stat-icon" style="color: var(--success)"></i>
+            </div>
+            <div class="stat-card glass" id="card-search">
+                <span class="label">Check Debt (Name)</span>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <input type="text" id="search-name" placeholder="Name..." class="glass search-input">
+                    <button id="btn-search" class="btn-icon"><i data-lucide="search"></i></button>
+                    <button id="btn-clear-search" class="btn-icon" style="display: none;"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <div class="filter-bar glass">
+            <div class="filter-group">
+                <button class="filter-btn active" data-status="all">All</button>
+                <button class="filter-btn" data-status="Active">Active</button>
+                <button class="filter-btn" data-status="Paid">Paid</button>
+            </div>
+            <div class="auto-refresh-tag">
+                <span class="dot"></span> Auto-sync Active (30s)
+            </div>
+        </div>
+
+        <main class="main-grid">
+            <div class="debt-list-container glass">
+                <div class="section-header">
+                    <h2>Debt Records</h2>
+                    <button class="btn-icon" id="btn-refresh"><i data-lucide="refresh-cw"></i></button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="debt-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Name</th>
+                                <th>Amount</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="debt-items">
+                            <!-- Items dynamically loaded -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <aside>
+                <div class="form-card glass">
+                    <h3>Create Record</h3>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem;">Log a new borrow or loan entry.</p>
+                    
+                    <form id="debt-form">
+                        <div class="input-group">
+                            <label>Name (Recipient/Provider)</label>
+                            <input type="text" id="form-nama" placeholder="e.g. John Doe" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Amount (IDR)</label>
+                            <input type="number" id="form-jumlah" placeholder="e.g. 50000" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Description</label>
+                            <textarea id="form-ket" rows="3" placeholder="What was it for?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Record</button>
+                    </form>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
