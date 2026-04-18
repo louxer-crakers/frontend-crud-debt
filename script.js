@@ -1,5 +1,5 @@
 /**
- * Project Debt Tracker - Client Side Logic
+ * Project Debt Tracker - Client Side Logic (Phase 3)
  * Integration with AWS API Gateway & DynamoDB
  */
 
@@ -13,6 +13,10 @@ const SEARCH_BTN = document.getElementById('btn-search');
 const CLEAR_SEARCH_BTN = document.getElementById('btn-clear-search');
 const SEARCH_INPUT = document.getElementById('search-name');
 const FILTER_BTNS = document.querySelectorAll('.filter-btn');
+
+// Modal Elements
+const EDIT_MODAL = document.getElementById('edit-modal');
+const EDIT_FORM = document.getElementById('edit-form');
 
 // State
 let debts = [];
@@ -30,15 +34,15 @@ SAVE_CONFIG_BTN.addEventListener('click', () => {
     const url = API_URL_INPUT.value.trim();
     if (url) {
         localStorage.setItem(API_CONFIG_KEY, url);
-        alert('API Config Saved!');
+        showToast('Configuration Saved!', 'success');
         initDashboard();
     }
 });
 
 DEBT_FORM.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const url = API_URL_INPUT.value.trim();
-    if (!url) return alert('Please set API URL first!');
+    const url = getApiUrl();
+    if (!url) return;
 
     const data = {
         nama: document.getElementById('form-nama').value,
@@ -54,14 +58,47 @@ DEBT_FORM.addEventListener('submit', async (e) => {
         });
 
         if (response.ok) {
+            showToast('Record Created Successfully', 'success');
             DEBT_FORM.reset();
             fetchData();
         } else {
             const err = await response.json();
-            alert(`Error: ${err.error || 'Failed to save'}`);
+            showToast(err.error || 'Failed to create', 'error');
         }
     } catch (error) {
-        alert(`Request failed: ${error.message}`);
+        showToast('Request Failed', 'error');
+    }
+});
+
+EDIT_FORM.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = getApiUrl();
+    const id = document.getElementById('edit-id').value;
+
+    const data = {
+        nama: document.getElementById('edit-nama').value,
+        jumlah: parseFloat(document.getElementById('edit-jumlah').value),
+        keterangan: document.getElementById('edit-ket').value,
+        status: document.getElementById('edit-status').value
+    };
+
+    try {
+        const response = await fetch(`${url}/debt/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            showToast('Updated Successfully', 'success');
+            closeEditModal();
+            fetchData();
+        } else {
+            const err = await response.json();
+            showToast(err.error || 'Update failed', 'error');
+        }
+    } catch (error) {
+        showToast('Update Request Failed', 'error');
     }
 });
 
@@ -69,7 +106,7 @@ REFRESH_BTN.addEventListener('click', fetchData);
 
 SEARCH_BTN.addEventListener('click', async () => {
     const name = SEARCH_INPUT.value.trim();
-    const url = API_URL_INPUT.value.trim();
+    const url = getApiUrl();
     if (!name || !url) return;
 
     try {
@@ -81,11 +118,12 @@ SEARCH_BTN.addEventListener('click', async () => {
             renderDebts();
             CLEAR_SEARCH_BTN.style.display = 'flex';
             stopAutoRefresh();
+            showToast(`Found ${debts.length} records for ${name}`, 'success');
         } else {
-            alert(data.error);
+            showToast(data.error || 'Search Error', 'error');
         }
     } catch (e) {
-        alert('Search failed');
+        showToast('Search Failed', 'error');
     }
 });
 
@@ -107,7 +145,7 @@ FILTER_BTNS.forEach(btn => {
 
 // Functions
 async function fetchData() {
-    const url = API_URL_INPUT.value.trim().replace(/\/$/, "");
+    const url = getApiUrl();
     if (!url) return;
 
     REFRESH_BTN.classList.add('animate-spin');
@@ -134,55 +172,128 @@ async function fetchData() {
 }
 
 function renderDebts() {
-    if (!Array.isArray(debts)) {
-        DEBT_ITEMS_BODY.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">No records found or API error.</td></tr>';
+    if (!Array.isArray(debts) || debts.length === 0) {
+        DEBT_ITEMS_BODY.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--text-low);">
+            <i data-lucide="info" style="margin-bottom: 0.5rem;"></i><br>No records found.
+        </td></tr>`;
+        lucide.createIcons();
         return;
     }
 
-    DEBT_ITEMS_BODY.innerHTML = debts.map(item => `
-        <tr class="debt-row">
-            <td style="font-size: 0.8rem; color: var(--text-muted)">${new Date(item.tanggal).toLocaleDateString() || '-'}</td>
-            <td style="font-weight: 600">${item.nama}</td>
-            <td style="font-weight: 700; color: ${item.status === 'Paid' ? 'var(--success)' : 'var(--text-main)'}">
+    DEBT_ITEMS_BODY.innerHTML = debts.map((item, index) => `
+        <tr class="debt-row" style="transition-delay: ${index * 50}ms">
+            <td style="font-size: 0.8rem; color: var(--text-low)">${new Date(item.tanggal).toLocaleDateString() || '-'}</td>
+            <td style="font-weight: 700; color: var(--text-high);">${item.nama}</td>
+            <td style="font-weight: 800; font-size: 1.1rem; color: ${item.status === 'Paid' ? 'var(--success)' : 'var(--text-high)'}">
                 Rp ${formatNumber(item.jumlah)}
             </td>
-            <td style="font-size: 0.9rem">${item.keterangan || '-'}</td>
+            <td style="font-size: 0.85rem; color: var(--text-mid);">${item.keterangan || '-'}</td>
             <td>
                 <span class="badge badge-${(item.status || 'Active').toLowerCase()}">${item.status}</span>
             </td>
             <td>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="action-btns">
+                    <button class="btn-icon btn-edit" onclick="openEditModal('${item.id}')" title="Edit">
+                        <i data-lucide="edit-3" style="width: 14px;"></i>
+                    </button>
                     ${item.status !== 'Paid' ? `
-                        <button class="btn-icon" onclick="markPaid('${item.id}')" title="Mark as Paid">
-                            <i data-lucide="check-circle" style="width: 16px;"></i>
+                        <button class="btn-icon btn-settle" onclick="confirmSettle('${item.id}')" title="Settle">
+                            <i data-lucide="check" style="width: 14px;"></i>
                         </button>
-                    ` : '<i data-lucide="check" style="width: 16px; color: var(--success); opacity: 0.5"></i>'}
+                    ` : `
+                        <i data-lucide="shield-check" style="width: 24px; color: var(--secondary); opacity: 0.4; margin-left: 10px;"></i>
+                    `}
                 </div>
             </td>
         </tr>
     `).join('');
+    
+    // Stagger reveal
+    setTimeout(() => {
+        document.querySelectorAll('.debt-row').forEach(row => row.classList.add('visible'));
+    }, 100);
+
     lucide.createIcons();
 }
 
+async function openEditModal(id) {
+    const url = getApiUrl();
+    try {
+        const res = await fetch(`${url}/debt/${id}`);
+        const item = await res.json();
+        
+        if (res.ok) {
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('edit-nama').value = item.nama;
+            document.getElementById('edit-jumlah').value = item.jumlah;
+            document.getElementById('edit-ket').value = item.keterangan;
+            document.getElementById('edit-status').value = item.status || 'Active';
+            
+            EDIT_MODAL.style.display = 'flex';
+        }
+    } catch (e) {
+        showToast('Failed to fetch details', 'error');
+    }
+}
+
+function closeEditModal() {
+    EDIT_MODAL.style.display = 'none';
+}
+
+function confirmSettle(id) {
+    if (confirm('Are you sure you want to mark this as Paid?')) {
+        markPaid(id);
+    }
+}
+
 async function markPaid(id) {
-    const url = API_URL_INPUT.value.trim().replace(/\/$/, "");
+    const url = getApiUrl();
     try {
         const response = await fetch(`${url}/debt/${id}`, { method: 'DELETE' });
-        if (response.ok) fetchData();
+        if (response.ok) {
+            showToast('Record Settled!', 'success');
+            fetchData();
+        }
     } catch (e) {
-        alert('Failed to update status');
+        showToast('Settlement Failed', 'error');
     }
 }
 
 function updateStats(stats) {
     if (stats.error) return;
-    
     document.querySelector('#card-total .value').innerText = `Rp ${formatNumber(stats.total_active)}`;
     document.querySelector('#card-lunas .value').innerText = `Rp ${formatNumber(stats.total_paid)}`;
 }
 
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = type === 'success' ? 'check-circle' : 'alert-circle';
+    toast.innerHTML = `<i data-lucide="${icon}"></i> <span>${message}</span>`;
+    
+    container.appendChild(toast);
+    lucide.createIcons();
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
+
 function formatNumber(num) {
     return new Intl.NumberFormat('id-ID').format(num || 0);
+}
+
+function getApiUrl() {
+    const url = API_URL_INPUT.value.trim().replace(/\/$/, "");
+    if (!url) {
+        showToast('Please set API URL', 'error');
+        return null;
+    }
+    return url;
 }
 
 function startAutoRefresh() {
@@ -195,11 +306,24 @@ function stopAutoRefresh() {
 }
 
 function initDashboard() {
+    // Hide splash
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('splash');
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 800);
+        }, 1500);
+    });
+
     if (API_URL_INPUT.value.trim()) {
         fetchData();
         startAutoRefresh();
     }
 }
 
-window.markPaid = markPaid;
+// Global hooks
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.confirmSettle = confirmSettle;
+
 initDashboard();
